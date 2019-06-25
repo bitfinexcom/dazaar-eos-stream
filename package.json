@@ -1,0 +1,28 @@
+{
+  "name": "dazaar-eos-stream",
+  "version": "0.0.0",
+  "description": "EOS subscriber implementation for Dazaar",
+  "main": "index.js",
+  "scripts": {
+    "test": "standard"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bitfinexcom/dazaar-eos-stream.git"
+  },
+  "keywords": [
+    "dazaar",
+    "eos"
+  ],
+  "author": "Mathias Buus (@mafintosh)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/bitfinexcom/dazaar-eos-stream/issues"
+  },
+  "homepage": "https://github.com/bitfinexcom/dazaar-eos-stream#readme",
+  "dependencies": {
+    "eosjs": "^20.0.0",
+    "from2": "^2.3.0",
+    "node-fetch": "^2.6.0"
+  }
+}
