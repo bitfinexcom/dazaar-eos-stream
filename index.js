@@ -94,7 +94,6 @@ function configure (opts) {
         const currentAmount = overflow + amount
 
         overflow = currentAmount - consumed
-        console.log(overflow, activePayments, i)
         if (overflow < 0) { // we spent all the moneys
           activePayments.splice(i, 1) // i is always 0 here i think, but better safe than sorry
           i--
@@ -124,7 +123,7 @@ function configure (opts) {
 
     function read (size, cb) {
       callback = cb
-      rpc.history_get_actions(account, pos, 1).then(onactions).catch(destroy)
+      rpc.history_get_actions(account, pos, 30).then(onactions).catch(destroy)
     }
 
     function onactions (acs) {
