@@ -41,7 +41,9 @@ Make a new instance. Options include:
   rpc: chainRpcEndpoint, // must have the history plugin enabled
   chainId: ..., // the chain id
   account: ..., // your account id
-  privateKey: ... // needed for payments
+  privateKey: ..., // needed for payments
+  contract: ..., // the contract to use (defaults to eosio.token)
+  permission: ... // the account perm to use (defaults to active)
 }
 ```
 

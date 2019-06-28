@@ -16,6 +16,8 @@ function configure (opts) {
   let api = null
   const account = opts.account
   if (!account) throw new Error('opts.account must be set')
+  const contract = opts.contract || 'eosio.token'
+  const permission = opts.permission || 'active'
 
   if (opts.privateKey) {
     const signatureProvider = new JsSignatureProvider([ opts.privateKey ])
@@ -40,11 +42,11 @@ function configure (opts) {
 
     api.transact({
       actions: [{
-        account: 'eosio.token',
+        account: contract,
         name: 'transfer',
         authorization: [{
           actor: account,
-          permission: 'owner'
+          permission
         }],
         data: {
           from: account,
@@ -116,6 +118,7 @@ function configure (opts) {
     let callback
     let pos = 0
     let timeout
+    let lastIrreversibleBlock = 0
 
     const stream = from.obj(read)
     stream.on('close', () => clearTimeout(timeout))
@@ -129,14 +132,16 @@ function configure (opts) {
     function onactions (acs) {
       const res = []
 
-      for (const a of acs.actions) {
-        pos++
+      lastIrreversibleBlock = acs.last_irreversible_block
 
+      for (const a of acs.actions) {
+        if (a.block_num >= lastIrreversibleBlock) break
+        pos++
         if (a.block_num === prevBlock) continue
         prevBlock = a.block_num
 
         const act = a.action_trace
-        if (act) res.push(act)
+        if (act && isTransaction(act)) res.push(act)
       }
 
       if (!res.length) {
@@ -146,6 +151,12 @@ function configure (opts) {
 
       for (let i = 0; i < res.length - 1; i++) stream.push(res[i])
       callback(null, res[res.length - 1])
+    }
+
+    function isTransaction (trace) {
+      if (trace.act.name !== 'transfer') return false
+      if (trace.act.account !== contract) return false
+      return true
     }
 
     function destroy (err) {
