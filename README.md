@@ -58,6 +58,11 @@ be the Dazaar filter specifying the hash of your Dazaar Noise public key.
 Create a subscription monitor. Dazaar filter should be the filter you are watching
 and spend rate should be how many EOS you want the buyer to pay (ie `0.0001 EOS/s` fx).
 
+#### `sub = d.subscription(dazaarCardPaymentObject)`
+
+Same as above but configures itself using the Dazaar card payment object.
+See https://github.com/bitfinexcom/dazaar-card for more info.
+
 #### `bool = sub.active([minSeconds])`
 
 Tells you if the filter has any money left based on the spend rate.
