@@ -62,10 +62,18 @@ function configure (opts) {
   }
 
   function subscription (filter, rate) {
-    const match = rate.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
-    if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
+    let perSecond = 0
 
-    const perSecond = Number(match[1])
+    if (typeof filter === 'object' && filter) { // dazaar card
+      const parsed = convertDazaarPayment(filter)
+      filter = parsed.filter
+      perSecond = parsed.perSecond
+    } else {
+      const match = rate.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
+      if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
+      perSecond = Number(match[1])
+    }
+
     const sub = new EventEmitter()
 
     const stream = createTransactionStream()
@@ -162,6 +170,30 @@ function configure (opts) {
     function destroy (err) {
       stream.destroy(err)
     }
+  }
+}
+
+function convertDazaarPayment (pay) {
+  let ratio = 0
+
+  switch (pay.unit) {
+    case 'minutes':
+      ratio = 60
+      break
+    case 'seconds':
+      ratio = 1
+      break
+    case 'hours':
+      ratio = 3600
+      break
+  }
+
+  const perSecond = Number(pay.amount) / (Number(pay.interval) * ratio)
+  if (!perSecond) throw new Error('Invalid payment info')
+
+  return {
+    filter: 'dazaar key: ' + pay.from,
+    perSecond
   }
 }
 
