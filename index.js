@@ -64,10 +64,8 @@ function configure (opts) {
   function subscription (filter, rate) {
     let perSecond = 0
 
-    if (typeof filter === 'object' && filter) { // dazaar card
-      const parsed = convertDazaarPayment(filter)
-      filter = parsed.filter
-      perSecond = parsed.perSecond
+    if (typeof rate === 'object' && rate) { // dazaar card
+      perSecond = convertDazaarPayment(rate)
     } else {
       const match = rate.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
       if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
@@ -78,6 +76,12 @@ function configure (opts) {
 
     const stream = createTransactionStream()
     const activePayments = []
+
+    sub.synced = false
+    stream.once('synced', function () {
+      sub.synced = true
+      sub.emit('synced')
+    })
 
     stream.on('data', function (data) {
       if (data.act.data.memo !== filter) return
@@ -127,6 +131,7 @@ function configure (opts) {
     let pos = 0
     let timeout
     let lastIrreversibleBlock = 0
+    let synced = false
 
     const stream = from.obj(read)
     stream.on('close', () => clearTimeout(timeout))
@@ -154,6 +159,10 @@ function configure (opts) {
 
       if (!res.length) {
         if (acs.actions.length) return read(0, callback)
+        if (!synced) {
+          synced = true
+          stream.emit('synced')
+        }
         return setTimeout(read, 5000, 0, callback)
       }
 
@@ -191,10 +200,7 @@ function convertDazaarPayment (pay) {
   const perSecond = Number(pay.amount) / (Number(pay.interval) * ratio)
   if (!perSecond) throw new Error('Invalid payment info')
 
-  return {
-    filter: 'dazaar key: ' + pay.from,
-    perSecond
-  }
+  return perSecond
 }
 
 function parseQuantity (s) {
