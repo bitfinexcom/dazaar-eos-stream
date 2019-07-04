@@ -64,10 +64,8 @@ function configure (opts) {
   function subscription (filter, rate) {
     let perSecond = 0
 
-    if (typeof filter === 'object' && filter) { // dazaar card
-      const parsed = convertDazaarPayment(filter)
-      filter = parsed.filter
-      perSecond = parsed.perSecond
+    if (typeof rate === 'object' && rate) { // dazaar card
+      perSecond = convertDazaarPayment(rate)
     } else {
       const match = rate.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
       if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
@@ -202,10 +200,7 @@ function convertDazaarPayment (pay) {
   const perSecond = Number(pay.amount) / (Number(pay.interval) * ratio)
   if (!perSecond) throw new Error('Invalid payment info')
 
-  return {
-    filter: 'dazaar key: ' + pay.from,
-    perSecond
-  }
+  return perSecond
 }
 
 function parseQuantity (s) {
