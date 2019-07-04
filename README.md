@@ -71,3 +71,7 @@ Set `minSeconds` to the minimum amount of seconds they should have money left fo
 #### `sub.on('update')`
 
 Emitted everytime a new transaction is discovered on the chain.
+
+#### `sub.on('synced')`
+
+Emitted when the subscription is fully synchronised with the EOS blockchain

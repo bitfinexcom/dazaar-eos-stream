@@ -79,6 +79,12 @@ function configure (opts) {
     const stream = createTransactionStream()
     const activePayments = []
 
+    sub.synced = false
+    stream.once('synced', function () {
+      sub.synced = true
+      sub.emit('synced')
+    })
+
     stream.on('data', function (data) {
       if (data.act.data.memo !== filter) return
       if (data.act.data.to !== account) return
@@ -127,6 +133,7 @@ function configure (opts) {
     let pos = 0
     let timeout
     let lastIrreversibleBlock = 0
+    let synced = false
 
     const stream = from.obj(read)
     stream.on('close', () => clearTimeout(timeout))
@@ -154,6 +161,10 @@ function configure (opts) {
 
       if (!res.length) {
         if (acs.actions.length) return read(0, callback)
+        if (!synced) {
+          synced = true
+          stream.emit('synced')
+        }
         return setTimeout(read, 5000, 0, callback)
       }
 
