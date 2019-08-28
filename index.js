@@ -95,6 +95,16 @@ function configure (opts) {
     })
 
     sub.active = function (minSeconds) {
+      return sub.remainingFunds(minSeconds) > 0
+    }
+
+    sub.remainingTime = function (minSeconds) {
+      const funds = sub.remainingFunds(minSeconds)
+      if (funds <= 0) return 0
+      return Math.floor(Math.max(0, funds / perSecond * 1000))
+    }
+
+    sub.remainingFunds = function (minSeconds) {
       if (!minSeconds) minSeconds = 0
 
       let overflow = 0
@@ -115,7 +125,7 @@ function configure (opts) {
         }
       }
 
-      return overflow > 0
+      return overflow
     }
 
     sub.destroy = function () {
