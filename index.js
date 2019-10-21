@@ -7,11 +7,16 @@ const fetch = require('node-fetch') // node only; not needed in browsers
 const { TextEncoder, TextDecoder } = require('util') // node only; native TextEncoder/Decoder
 
 module.exports = configure
+module.exports.testnet = function (opts) {
+  if (!opts) opts = {}
+  return configure({ ...opts, chainId: '5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191', rpc: 'https://api-kylin.eoslaomao.com' })
+}
 
 function configure (opts) {
   if (!opts) opts = {}
-  const chainId = opts.chainId || '5fff1dae8dc8e2fc4d5b23b2c7665c97f9e9d8edf2b6485a86ba311c25639191'
-  const rpc = new JsonRpc(opts.rpc || 'https://api-kylin.eoslaomao.com', { fetch })
+  const chainId = opts.chainId || 'aca376f206b8fc25a6ed44dbdc66547c36c6c33e3a119ffbeaef943642f0e906'
+  const rpc = new JsonRpc(opts.rpc || 'https://api.eosnewyork.io', { fetch })
+  const irreversible = !!opts.irreversible
 
   let api = null
   const account = opts.account
@@ -145,6 +150,7 @@ function configure (opts) {
 
     const stream = from.obj(read)
     stream.on('close', () => clearTimeout(timeout))
+
     return stream
 
     function read (size, cb) {
@@ -159,7 +165,7 @@ function configure (opts) {
       lastIrreversibleBlock = acs.last_irreversible_block
 
       for (const a of acs.actions) {
-        if (a.block_num >= lastIrreversibleBlock) break
+        if (a.block_num >= lastIrreversibleBlock && irreversible) break
         pos++
         if (a.block_num === prevBlock) continue
         prevBlock = a.block_num
