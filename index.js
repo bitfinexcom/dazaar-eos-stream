@@ -154,6 +154,7 @@ function configure (opts) {
 
     function onactions (acs) {
       const res = []
+      let prev = pos
 
       lastIrreversibleBlock = acs.last_irreversible_block
 
@@ -168,7 +169,7 @@ function configure (opts) {
       }
 
       if (!res.length) {
-        if (acs.actions.length) return read(0, callback)
+        if (acs.actions.length && prev !== pos) return read(0, callback)
         if (!synced) {
           synced = true
           stream.emit('synced')
