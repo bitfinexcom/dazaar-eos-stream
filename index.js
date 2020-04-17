@@ -44,6 +44,7 @@ function configure (opts) {
 
   function pay (destination, amount, memo, cb) {
     if (!api) throw new Error('opts.privateKey must be provided in the constructor')
+    if (typeof (amount) === 'number') amount = amount.toFixed(4) + ' EOS'
 
     api.transact({
       actions: [{
@@ -67,6 +68,7 @@ function configure (opts) {
   }
 
   function subscription (filter, rate) {
+    const self = this
     let perSecond = 0
 
     if (typeof rate === 'object' && rate) { // dazaar card
@@ -113,7 +115,9 @@ function configure (opts) {
       if (!minSeconds) minSeconds = 0
 
       let overflow = 0
-      const now = Date.now() + (minSeconds * 1000)
+      let now = Date.now() + (minSeconds * 1000)
+
+      now -= 5000 // compensate delay for the seller to receive block
 
       for (let i = 0; i < activePayments.length; i++) {
         const { amount, time } = activePayments[i]
