@@ -2,15 +2,15 @@ const test = require('tape')
 const deos = require('./')
 
 var buyerOpts = {
-  privateKey: '5KDiuujiPNpTEZ1zJ3NNCHDMq8C3SeAmHMbhxv5MGkphTYAHy7s',
-  account: 'alice',
+  privateKey: '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3',
+  account: 'bob',
   rpc: 'http://localhost:8888',
   chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f'
 }
 
 var sellerOpts = {
-  account: 'bob',
-  privateKey: '5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3',
+  account: 'alice',
+  privateKey: '5KDiuujiPNpTEZ1zJ3NNCHDMq8C3SeAmHMbhxv5MGkphTYAHy7s',
   chainId: 'cf057bbfb72640471fd910bcb67639c22df9f92470936cddc1ade0e2f2e7dc4f',
   rpc: 'http://localhost:8888'
 }
@@ -46,7 +46,9 @@ test('create transaction stream & pay', t => {
 
   str.on('synced', function () {
     synced = true
-    buyer.pay(sellerOpts.account, '0.1000 EOS', label, () => {})
+    buyer.pay(sellerOpts.account, '0.1000 EOS', label, (err) => {
+      if (err) console.log(err)
+    })
   })
 
   str.on('data', function (data) {
@@ -96,7 +98,9 @@ test('subscription & pay', t => {
   })
 
   sub.on('synced', () => {
-    buyer.pay(sellerOpts.account, `${amount}.0000 EOS`, label, () => {})
+    buyer.pay(sellerOpts.account, `${amount}.0000 EOS`, label, (err) => {
+      if (err) console.log(err)
+    })
   })
 })
 
@@ -171,11 +175,11 @@ test('subscription runs out', t => {
   var synced = false
 
   var rate = amount / 2
-  var sub = seller.subscription(label, `${rate} EOS/s`)
+  var sub = seller.subscription(label, `${rate} EOS/s`, 0, 5000)
 
   sub.once('synced', function () {
     synced = true
-    t.notOk(sub.active())
+    t.notOk(sub.active(), 'sync')
     
     buyer.pay(sellerOpts.account, `${amount.toFixed(4)} EOS`, label, function (err) {
       if (err) console.error(err)
@@ -184,10 +188,10 @@ test('subscription runs out', t => {
 
   sub.on('update', function () {
     if (!synced) return
-    t.ok(sub.active())
+    t.ok(sub.active(), 'update')
 
     setTimeout(() => {
-      t.notOk(sub.active())
+      t.notOk(sub.active(), 'timeout')
       
       sub.destroy()
       t.end()
