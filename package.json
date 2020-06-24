@@ -1,5 +1,5 @@
 {
-  "name": "dazaar-eos-stream",
+  "name": "@dazaar/eos-stream",
   "version": "1.1.0",
   "description": "EOS subscriber implementation for Dazaar",
   "main": "index.js",
@@ -14,7 +14,7 @@
     "dazaar",
     "eos"
   ],
-  "author": "Mathias Buus (@mafintosh)",
+  "author": "Dazaar Limited",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/bitfinexcom/dazaar-eos-stream/issues"
