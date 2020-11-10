@@ -76,7 +76,7 @@ function configure (opts) {
     if (typeof paymentInfo === 'object' && paymentInfo) { // dazaar card
       perSecond = convertDazaarPayment(paymentInfo)
       minSeconds = paymentInfo.minSeconds
-      paymentDelay = paymentDelay.paymentDelay
+      paymentDelay = paymentInfo.paymentDelay
     } else {
       const match = paymentInfo.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
       if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
