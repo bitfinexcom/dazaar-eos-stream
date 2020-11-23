@@ -1,4 +1,5 @@
 const from = require('from2')
+const clerk = require('payment-tracker')
 const { EventEmitter } = require('events')
 
 const { Api, JsonRpc } = require('eosjs')
@@ -44,6 +45,7 @@ function configure (opts) {
 
   function pay (destination, amount, memo, cb) {
     if (!api) throw new Error('opts.privateKey must be provided in the constructor')
+    if (typeof (amount) === 'number') amount = amount.toFixed(4) + ' EOS'
 
     api.transact({
       actions: [{
@@ -66,13 +68,17 @@ function configure (opts) {
     }).then(() => process.nextTick(cb, null)).catch((err) => process.nextTick(cb, err))
   }
 
-  function subscription (filter, rate) {
+  // include 2000ms payment delay to account for block latency
+  function subscription (filter, paymentInfo, minSeconds, paymentDelay) {
+    const self = this
     let perSecond = 0
 
-    if (typeof rate === 'object' && rate) { // dazaar card
-      perSecond = convertDazaarPayment(rate)
+    if (typeof paymentInfo === 'object' && paymentInfo) { // dazaar card
+      perSecond = convertDazaarPayment(paymentInfo)
+      minSeconds = paymentInfo.minSeconds
+      paymentDelay = paymentInfo.paymentDelay
     } else {
-      const match = rate.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
+      const match = paymentInfo.trim().match(/^(\d(?:\.\d+)?)\s*EOS\s*\/\s*s$/i)
       if (!match) throw new Error('rate should have the form "n....nn EOS/s"')
       perSecond = Number(match[1])
     }
@@ -80,7 +86,7 @@ function configure (opts) {
     const sub = new EventEmitter()
 
     const stream = createTransactionStream()
-    const activePayments = []
+    let payments = clerk(perSecond, minSeconds, paymentDelay)
 
     sub.synced = false
     stream.once('synced', function () {
@@ -95,45 +101,16 @@ function configure (opts) {
       const amount = parseQuantity(data.act.data.quantity)
       const time = new Date(data.block_time + 'Z').getTime() // The EOS timestamps don't have the ISO Z at the end?
 
-      activePayments.push({ amount, time })
+      payments.add({ amount, time })
       sub.emit('update')
     })
 
-    sub.active = function (minSeconds) {
-      return sub.remainingFunds(minSeconds) > 0
-    }
-
-    sub.remainingTime = function (minSeconds) {
-      const funds = sub.remainingFunds(minSeconds)
-      if (funds <= 0) return 0
-      return Math.floor(Math.max(0, funds / perSecond * 1000))
-    }
-
-    sub.remainingFunds = function (minSeconds) {
-      if (!minSeconds) minSeconds = 0
-
-      let overflow = 0
-      const now = Date.now() + (minSeconds * 1000)
-
-      for (let i = 0; i < activePayments.length; i++) {
-        const { amount, time } = activePayments[i]
-        const nextTime = i + 1 < activePayments.length ? activePayments[i + 1].time : now
-
-        const consumed = Math.max(0, perSecond * ((nextTime - time) / 1000))
-        const currentAmount = overflow + amount
-
-        overflow = currentAmount - consumed
-        if (overflow < 0) { // we spent all the moneys
-          activePayments.splice(i, 1) // i is always 0 here i think, but better safe than sorry
-          i--
-          overflow = 0
-        }
-      }
-
-      return overflow
-    }
+    sub.active = payments.active
+    sub.remainingTime = payments.remainingTime
+    sub.remainingFunds = payments.remainingFunds
 
     sub.destroy = function () {
+      payments = null
       stream.destroy()
     }
 
